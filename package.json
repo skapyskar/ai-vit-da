@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Depth Limited Search 8-puzzle visualizer for 24BCT0058",
   "scripts": {
+    "build": "node scripts/build.mjs",
+    "format:check": "prettier --check index.html css/styles.css js tests scripts playwright.config.js package.json '.github/workflows/*.yml'",
     "start": "python3 -m http.server 8080 --bind 127.0.0.1",
     "test": "node --test --test-isolation=none tests/*.test.js",
     "test:coverage": "node --experimental-test-coverage --test-coverage-include='js/puzzle.js' --test-coverage-include='js/dls.js' --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 --test --test-isolation=none tests/*.test.js",
