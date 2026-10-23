@@ -1,0 +1,37 @@
+8-Puzzle demonstration - recording script
+Aayush Dwivedi | 24BCT0058
+Video length: 03:17.440
+
+Read the paragraphs aloud. Do not read the headings or timestamps.
+Use the time windows as pacing guides. Short natural pauses are enough.
+Read DLS as D-L-S. HTML, CSS and BCT can be read letter by letter.
+The complexity expressions are written out as spoken words.
+The video has no captions or audio; the narration will be added after recording.
+
+1. 00:00.000 - 00:23.960 | Introduction and implementation
+
+I'm Aayush Dwivedi, registration number twenty-four B C T zero zero five eight. This project solves the eight-puzzle using Depth Limited Search. I used HTML, CSS, JavaScript and Bootstrap. The code is split into puzzle utilities, the search algorithm and interface controls. The website runs in the browser and is hosted on GitHub Pages.
+
+2. 00:23.960 - 00:50.080 | Board representation and input
+
+Each board is stored as an array of nine numbers, with zero representing the blank. Input validation checks that every digit appears exactly once. The user can enter a different goal state as well. Random puzzles are made by taking legal moves from that goal, which ensures they are solvable. The depth limit sets how far each search branch can go.
+
+3. 00:50.080 - 01:22.240 | DLS and playback controls
+
+Here, Next expands the initial node and produces its legal successors. DLS uses depth-first traversal, trying Up, Right, Down and Left in that order. It skips boards already on the current path to prevent cycles. I used a JavaScript generator so execution can stop after a visit. That supports pause, resume and stepping through saved states. The display also records the parent, pending frontier and expanded visits, making the search process visible.
+
+4. 01:22.240 - 01:52.400 | Solution and measurements
+
+With the limit set to two, the solution moves the blank Down and then Right. Every move costs one, so the path cost is two. Generated counts the root and successor visits added to the frontier. Expanded counts visits that produce successors; cutoff nodes are not expanded. Computation time excludes animation and pauses, while memory is estimated from stored search data. The solution can be replayed or inspected one move at a time.
+
+5. 01:52.400 - 02:17.480 | Cutoff and solvability
+
+At a limit of one, the goal cannot be reached, so the result is a cutoff. This means the limit blocked further search, not that the puzzle is unsolvable. The code tests for the goal before applying the depth cutoff, allowing a goal exactly at the limit. A separate inversion-parity check rejects unreachable board pairs.
+
+6. 02:17.480 - 02:47.480 | Comparing depth limits
+
+The comparison page repeats DLS on the same puzzle at several depth limits. These are independent runs, not iterative deepening. Limit zero stops at the initial board, while limit two finds this solution. Higher limits can explore additional branches before reaching the goal. Generated and expanded counts can therefore increase without changing the solution length. Search time can also vary between runs. Changing the puzzle clears earlier results so different inputs are not mixed.
+
+7. 02:47.480 - 03:17.440 | Complexity, testing and deployment
+
+DLS uses no heuristic to guide the search. Its worst-case time is order b to the power ell, where b is the branching factor and ell is the depth limit. Search storage is order b times ell. DLS can find solutions within the bound, but does not guarantee the shortest path. I ran thirteen unit tests and five browser tests. GitHub Actions checks and deploys the site on GitHub Pages.
