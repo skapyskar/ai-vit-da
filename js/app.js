@@ -1,15 +1,8 @@
-import {
-  DEFAULT_GOAL,
-  keyOf,
-  parseBoard,
-  randomBoard,
-  isSolvable,
-} from "./puzzle.js";
+import { keyOf, parseBoard, randomBoard, isSolvable } from "./puzzle.js";
 import { createSearch } from "./dls.js";
 
 const $ = (id) => document.getElementById(id);
 const HISTORY_LIMIT = 2000;
-const defaults = [1, 2, 3, 4, 0, 6, 7, 5, 8];
 const labels = {
   solved: "Solution found",
   cutoff: "Depth limit reached",
@@ -49,7 +42,7 @@ function miniBoard(board) {
     grid.append(element("span", tile ? "" : "blank", tile || ""));
   return grid;
 }
-function drawBoard(board, goal = DEFAULT_GOAL) {
+function drawBoard(board) {
   const grid = $("current-board");
   if (!grid.children.length) {
     for (let n = 0; n <= 8; n++) {
@@ -65,7 +58,6 @@ function drawBoard(board, goal = DEFAULT_GOAL) {
     const x = position % 3;
     const y = Math.floor(position / 3);
     tile.style.transform = `translate(calc(${x} * (100% + 6px)), calc(${y} * (100% + 6px)))`;
-    tile.classList.toggle("correct", n !== 0 && goal[position] === n);
   }
   grid.setAttribute("aria-label", `Current state: ${boardLabel(board)}`);
 }
@@ -95,10 +87,17 @@ function preview() {
   try {
     const initial = parseBoard($("initial-input").value);
     const goal = parseBoard($("goal-input").value);
-    drawBoard(initial, goal);
+    drawBoard(initial);
     $("initial-preview").replaceChildren(...miniBoard(initial).children);
-    $("goal-preview").replaceChildren(...miniBoard(goal).children);
+    $("initial-preview").setAttribute(
+      "aria-label",
+      `Initial state: ${boardLabel(initial)}`,
+    );
     $("stage-goal").replaceChildren(...miniBoard(goal).children);
+    $("stage-goal").setAttribute(
+      "aria-label",
+      `Goal state: ${boardLabel(goal)}`,
+    );
   } catch {
     /* Keep the last valid preview while the user edits. Run explains errors. */
   }
@@ -117,9 +116,7 @@ function updateControls() {
   const label = playing ? "Pause search" : "Resume search";
   $("pause").setAttribute("aria-label", label);
   $("pause").title = label;
-  $("pause")
-    .querySelector("path")
-    .setAttribute("d", playing ? "M8 5v14M16 5v14" : "m8 5 11 7-11 7Z");
+  $("pause").textContent = playing ? "Pause" : "Resume";
 }
 function clearComparison() {
   compareVersion++;
@@ -127,11 +124,7 @@ function clearComparison() {
   $("compare-run").disabled = false;
   $("comparison-status").textContent = "";
   const row = element("tr");
-  const cell = element(
-    "td",
-    "empty-note",
-    "Run an experiment to collect real measurements.",
-  );
+  const cell = element("td", "empty-note", "No results.");
   cell.colSpan = 8;
   row.append(cell);
   $("comparison-body").replaceChildren(row);
@@ -140,7 +133,7 @@ function clearComparison() {
       `Initial ${keyOf(parseBoard($("initial-input").value))} → Goal ${keyOf(parseBoard($("goal-input").value))} · 0 = blank`;
   } catch {
     $("comparison-instance").textContent =
-      "Set valid initial and goal states in the visualizer.";
+      "Enter valid initial and goal states on the Solver page.";
   }
 }
 function reset({ inputChanged = false } = {}) {
@@ -148,14 +141,13 @@ function reset({ inputChanged = false } = {}) {
   session = null;
   setError();
   $("run-state").textContent = "Ready";
-  $("event-kind").textContent = "Ready to explore";
-  $("event-description").textContent =
-    "Your initial state is on the board. Run the search or take the first step.";
+  $("run-state").removeAttribute("data-status");
+  $("event-kind").textContent = "Not started";
+  $("event-description").textContent = "Press Run or Next to start.";
   $("current-depth").textContent = "0";
-  $("depth-progress").style.width = "0%";
   $("board-caption").textContent = "Initial state";
   $("step-counter").textContent = "Step 0";
-  $("history-note").textContent = "UP → RIGHT → DOWN → LEFT";
+  $("history-note").textContent = "";
   for (const id of [
     "stat-generated",
     "stat-expanded",
@@ -169,10 +161,10 @@ function reset({ inputChanged = false } = {}) {
     $(id).textContent = "0";
   $("parent-depth").textContent = "—";
   for (const [id, text] of [
-    ["parent-board", "The root has no parent."],
-    ["successor-list", "Successors appear when a node expands."],
-    ["frontier-list", "No pending nodes yet."],
-    ["closed-list", "No nodes expanded yet."],
+    ["parent-board", "No parent."],
+    ["successor-list", "None."],
+    ["frontier-list", "Empty."],
+    ["closed-list", "Empty."],
   ]) {
     $(id).replaceChildren(element("p", "empty-note", text));
   }
@@ -220,20 +212,18 @@ function renderList(id, nodes, emptyText) {
   }
 }
 function renderEvent(frame) {
-  drawBoard(frame.board, session.goal);
+  drawBoard(frame.board);
   $("event-kind").textContent = {
-    expand: "Expanding this node",
-    cutoff: "Depth bound reached",
+    expand: "Expanding node",
+    cutoff: "Depth limit reached",
     goal: "Goal reached",
   }[frame.kind];
   $("event-description").textContent = {
-    expand: "Generate legal moves, then follow the next branch.",
-    cutoff: "No expansion here. Backtrack and try the next branch.",
-    goal: "This board matches the goal. The solution is ready below.",
+    expand: "Generating successors.",
+    cutoff: "Backtracking. This node will not be expanded.",
+    goal: "Solution path shown below.",
   }[frame.kind];
   $("current-depth").textContent = frame.depth;
-  $("depth-progress").style.width =
-    `${session.limit ? (frame.depth / session.limit) * 100 : 0}%`;
   $("board-caption").textContent =
     `${frame.move === "Start" ? "Root node" : `Blank moved ${frame.move.toLowerCase()}`} · g(n) = ${frame.depth}`;
   $("step-counter").textContent =
@@ -247,7 +237,7 @@ function renderEvent(frame) {
   $("parent-board").replaceChildren(
     frame.parent
       ? miniBoard(frame.parent)
-      : element("p", "empty-note", "The root has no parent."),
+      : element("p", "empty-note", "No parent."),
   );
   $("successor-count").textContent = frame.successors.length;
   $("successor-list").replaceChildren();
@@ -257,16 +247,14 @@ function renderEvent(frame) {
     $("successor-list").append(item);
   }
   if (!frame.successors.length)
-    $("successor-list").append(
-      element("p", "empty-note", "No successors generated at this visit."),
-    );
+    $("successor-list").append(element("p", "empty-note", "None generated."));
   $("frontier-count").textContent = frame.frontierSize;
   $("closed-count").textContent = frame.stats.expanded;
-  renderList("frontier-list", frame.frontier, "The frontier is empty.");
-  renderList("closed-list", frame.closed, "No nodes expanded yet.");
+  renderList("frontier-list", frame.frontier, "Empty.");
+  renderList("closed-list", frame.closed, "Empty.");
   $("history-note").textContent = session.dropped
-    ? `LATEST ${session.history.length} EVENTS · ${session.dropped} EARLIER EVENTS DISCARDED`
-    : "UP → RIGHT → DOWN → LEFT";
+    ? `Showing the latest ${session.history.length} steps. ${session.dropped} earlier steps discarded.`
+    : "";
   updateControls();
 }
 function advance() {
@@ -326,7 +314,7 @@ function showSolution(index) {
   const path = session.result.path;
   session.solutionIndex = Math.max(0, Math.min(index, path.length - 1));
   const node = path[session.solutionIndex];
-  drawBoard(node.board, session.goal);
+  drawBoard(node.board);
   $("board-caption").textContent =
     `Solution · ${node.move === "Start" ? "Initial state" : `blank ${node.move.toLowerCase()}`}`;
   $("solution-position").textContent =
@@ -334,10 +322,7 @@ function showSolution(index) {
   $("current-depth").textContent = session.solutionIndex;
   $("stat-cost").textContent = session.solutionIndex;
   $("event-kind").textContent = "Solution playback";
-  $("event-description").textContent =
-    "Each adjacent board is one legal blank movement.";
-  $("depth-progress").style.width =
-    `${session.limit ? (session.solutionIndex / session.limit) * 100 : 0}%`;
+  $("event-description").textContent = "Showing the solution moves.";
   $("solution-prev").disabled = session.solutionIndex === 0;
   $("solution-next").disabled = session.solutionIndex === path.length - 1;
   [...$("solution-path").children].forEach((button, i) =>
@@ -347,15 +332,16 @@ function showSolution(index) {
 function showResult() {
   const { status, path, stats } = session.result;
   $("result").hidden = false;
+  $("result").dataset.status = status;
+  $("run-state").dataset.status = status;
   $("result-title").textContent = labels[status];
   $("result-description").textContent = {
-    solved: `${path.length - 1} legal moves to the goal. Explore or replay the path below. DLS does not promise the shortest path.`,
-    cutoff: `No solution found within depth ${session.limit}. Increase the limit and try again; a cutoff does not mean unsolvable.`,
-    failure:
-      "All eligible branches within this search were exhausted without finding the goal.",
+    solved: `${path.length - 1} moves. Path cost: ${path.length - 1}.`,
+    cutoff: `No solution within depth ${session.limit}. Try a higher limit.`,
+    failure: "Search finished without finding a solution.",
     unsolvable: "The initial and goal states have different inversion parity.",
     "resource-limit":
-      "Stopped at 50,000 visits to keep your browser responsive. This result is inconclusive; try a smaller limit or a simpler puzzle.",
+      "Stopped after 50,000 visits. Try a smaller limit. This does not prove the puzzle is unsolvable.",
   }[status];
   $("summary").replaceChildren();
   for (const [label, value] of [
@@ -366,10 +352,6 @@ function showResult() {
     ["Search time", timeLabel(stats.elapsedMs)],
     ["Path cost", status === "solved" ? path.length - 1 : "—"],
     ["Search memory ≈", memoryLabel(stats.memoryBytes)],
-    [
-      "UI history estimate ≈",
-      `${session.history.length} events · ${memoryLabel(session.history.length * 3000)}`,
-    ],
   ]) {
     const item = element("div", "summary-item");
     item.append(element("span", "", label), element("strong", "", value));
@@ -397,29 +379,6 @@ function showResult() {
     $("solution-prev").disabled = true;
     $("solution-next").disabled = path.length <= 1;
   }
-}
-function exportRun() {
-  if (!session?.result) return;
-  const report = {
-    student: "Aayush Dwivedi",
-    registration: "24BCT0058",
-    algorithm: "DLS",
-    initial: session.initial,
-    goal: session.goal,
-    depthLimit: session.limit,
-    moveOrder: ["Up", "Right", "Down", "Left"],
-    ...session.result,
-    notes:
-      "Generated/expanded count visits, not unique states. Memory is an estimate. Computation time excludes animation.",
-  };
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(report, null, 2)], { type: "application/json" }),
-  );
-  const anchor = element("a");
-  anchor.href = url;
-  anchor.download = "24BCT0058-dls-run.json";
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 async function compare() {
   if (comparing) return;
@@ -487,14 +446,11 @@ async function compare() {
   }
   comparing = false;
   $("compare-run").disabled = false;
-  $("comparison-status").textContent =
-    "Experiment complete. All rows use the same puzzle; times vary by device and run.";
+  $("comparison-status").textContent = "Comparison complete.";
 }
 function navigate() {
   const route = location.hash.slice(1);
-  const page = ["lab", "compare", "algorithm", "about"].includes(route)
-    ? route
-    : "lab";
+  const page = ["lab", "compare", "algorithm"].includes(route) ? route : "lab";
   document.querySelectorAll(".page").forEach((node) => {
     node.hidden = node.id !== `page-${page}`;
   });
@@ -503,7 +459,7 @@ function navigate() {
     else link.removeAttribute("aria-current");
   });
   if (page !== "lab" && session?.playing) pauseSearch();
-  document.title = `${{ lab: "Visualizer", compare: "Compare limits", algorithm: "The algorithm", about: "About" }[page]} · 8-Puzzle Lab`;
+  document.title = `${{ lab: "Solver", compare: "Comparison", algorithm: "DLS Algorithm" }[page]} - 8-Puzzle Solver`;
 }
 
 $("run-state").setAttribute("role", "status");
@@ -534,27 +490,12 @@ $("speed").addEventListener("change", () => {
 });
 for (const id of ["initial-input", "goal-input", "depth-limit"])
   $(id).addEventListener("input", () => {
-    if (id !== "depth-limit") $("preset").value = "custom";
     reset({ inputChanged: true });
   });
-$("preset").addEventListener("change", () => {
-  const presets = {
-    two: [defaults, DEFAULT_GOAL, 8],
-    four: [[1, 2, 3, 5, 0, 6, 4, 7, 8], DEFAULT_GOAL, 6],
-    assignment: [[2, 8, 3, 1, 6, 4, 7, 0, 5], [1, 2, 3, 8, 0, 4, 7, 6, 5], 7],
-  };
-  const preset = presets[$("preset").value];
-  if (!preset) return;
-  $("initial-input").value = formatBoard(preset[0]);
-  $("goal-input").value = formatBoard(preset[1]);
-  $("depth-limit").value = preset[2];
-  reset({ inputChanged: true });
-});
 $("random").addEventListener("click", () => {
   try {
     const goal = parseBoard($("goal-input").value);
     $("initial-input").value = formatBoard(randomBoard(goal, 8));
-    $("preset").value = "custom";
     $("depth-limit").value = 10;
     reset({ inputChanged: true });
   } catch (error) {
@@ -583,7 +524,6 @@ $("solution-next").addEventListener("click", () => {
   clearTimeout(solutionTimer);
   showSolution(session.solutionIndex + 1);
 });
-$("export").addEventListener("click", exportRun);
 $("compare-run").addEventListener("click", compare);
 $("comparison-limits").addEventListener("input", clearComparison);
 window.addEventListener("hashchange", navigate);

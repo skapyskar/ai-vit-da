@@ -11,9 +11,6 @@ test("solves, inspects history, and plays a legal solution", async ({
   await page.getByRole("button", { name: "Run search", exact: true }).click();
   await expect(page.locator("#result-title")).toHaveText("Solution found");
   await expect(page.locator("#solution-path .path-step")).toHaveCount(3);
-  await expect(
-    page.getByRole("button", { name: "Download run JSON" }),
-  ).toBeEnabled();
   await page.getByRole("button", { name: "Previous search step" }).click();
   await expect(page.locator("#event-kind")).not.toHaveText("Goal reached");
   await page.getByRole("button", { name: "Resume search" }).click();
@@ -60,9 +57,9 @@ test("compares independent DLS limits on a fixed input and clears stale rows", a
   await page.getByRole("button", { name: "Run comparison" }).click();
   await expect(page.locator("#comparison-body tr")).toHaveCount(3);
   await expect(page.locator("#comparison-body")).toContainText("Solved");
-  await page.getByRole("link", { name: "Visualizer", exact: true }).click();
+  await page.getByRole("link", { name: "Solver", exact: true }).click();
   await page.getByLabel("Initial state", { exact: true }).fill("123456708");
-  await page.getByRole("link", { name: "Compare limits", exact: true }).click();
+  await page.getByRole("link", { name: "Comparison", exact: true }).click();
   await expect(page.locator("#comparison-body")).not.toContainText("Solved");
 });
 test("supports custom goals and responsive layouts with no automated accessibility violations", async ({
@@ -81,7 +78,7 @@ test("supports custom goals and responsive layouts with no automated accessibili
     ).toBe(true);
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  for (const route of ["lab", "compare", "algorithm", "about"]) {
+  for (const route of ["lab", "compare", "algorithm"]) {
     await page.goto(`/#${route}`);
     const result = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
