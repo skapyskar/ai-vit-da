@@ -4,7 +4,7 @@ Aayush Dwivedi | 24BCT0058
 
 Recording script and timings: [TXT](demo-narration.txt).
 
-The video is a silent screen recording without captions, ready for narration. It covers:
+The video includes recorded narration and pauses between sections, without captions. It covers:
 
 1. Initial and goal states, blank notation and depth limit.
 2. A DLS expansion: parent, successors, open stack and closed list.

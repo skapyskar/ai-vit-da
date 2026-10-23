@@ -6,7 +6,7 @@ Read the paragraphs aloud. Do not read the headings or timestamps.
 Use the time windows as pacing guides. Short natural pauses are enough.
 Read DLS as D-L-S. HTML, CSS and BCT can be read letter by letter.
 The complexity expressions are written out as spoken words.
-The video has no captions or audio; the narration will be added after recording.
+The final video includes recorded narration, with pauses and no captions.
 
 1. 00:00.000 - 00:23.960 | Introduction and implementation
 
