@@ -1,127 +1,89 @@
-# 8-Puzzle Lab — Depth Limited Search
+# 8-Puzzle Solver
 
-Interactive state-space search lab for **Artificial Intelligence — Digital Assignment (Case Study)**.
+Artificial Intelligence digital assignment.
 
-**Aayush Dwivedi · 24BCT0058**
+Aayush Dwivedi | 24BCT0058
 
-- **Live website:** https://skapyskar.github.io/ai-vit-da/
-- **Repository:** https://github.com/skapyskar/ai-vit-da
-- **Assignment:** [Original PDF](Artificial%20Intelligence%20QP%201.pdf)
-- **Submission PDF:** [24BCT0058-submission.pdf](docs/24BCT0058-submission.pdf)
-- **Demonstration video:** [Narrated screen walkthrough](docs/24BCT0058-dls-demo.mp4) (synthetic voice)
+- [Website](https://skapyskar.github.io/ai-vit-da/)
+- [Repository](https://github.com/skapyskar/ai-vit-da)
+- [Submission PDF](docs/24BCT0058-submission.pdf)
+- [Demonstration video](docs/24BCT0058-dls-demo.mp4)
 
-![Desktop workspace](images/visualizer-desktop.png)
+## Assignment
 
-## Assigned scope
+24BCT0058 is assigned algorithm 3, Depth Limited Search (DLS).
+The solver searches for the goal within the entered depth limit.
+It uses no heuristic.
 
-The allocation table assigns **24BCT0058 → algorithm 3 → Depth Limited Search (DLS)**. The assignment and student request explicitly restrict implementation to the designated algorithm. **DLS is the only implemented search algorithm.**
+The comparison page runs DLS at different limits on the same puzzle.
+Other algorithms are not implemented because the assignment restricts each student to one algorithm.
 
-The generic comparison requirement is adapted to measured independent DLS runs at different depth limits on the **same puzzle**. These are separate experiments, not iterative deepening. No results for unimplemented algorithms are invented. DLS is uninformed and uses **no heuristic**; Manhattan Distance and Misplaced Tiles are not applicable. See [scope and measurements](docs/assignment-scope.md).
+## Run
 
-## Features
+From the project directory:
 
-- Manual initial and goal states; compact digits, whitespace, comma separators and `_` blanks.
-- Random solvable puzzles relative to any goal, validated by inversion parity.
-- DLS from scratch, deterministic **Up → Right → Down → Left** order and active-path cycle prevention.
-- Animated current state, parent, successors, frontier stack and expanded history.
-- Run, pause/resume, next/previous search event, reset and playback speed controls.
-- Separately playable solution path with selectable states and individual move controls.
-- Live generated/expanded counts, depth, cost, measured computation time and approximate memory.
-- Explicit solved, cutoff, parity error and resource-limit outcomes.
-- Depth-limit comparisons, JSON export, algorithm explanation and student details.
-- Responsive layouts, keyboard controls, reduced-motion support and local runtime assets.
+    python3 -m http.server 8080 --bind 127.0.0.1
 
-## Run locally
+Open http://127.0.0.1:8080.
 
-No installation or build is needed to use the application. Serve over HTTP; ES modules do not work reliably through `file://`:
+## Usage
 
-```sh
-python3 -m http.server 8080 --bind 127.0.0.1
-```
+Enter the initial and goal states using each digit from 0 to 8 once.
+Use 0 or _ for the blank, or generate a random solvable puzzle.
+Set the depth limit and press Run.
 
-Open **http://127.0.0.1:8080**. Alternatively use `npm start`. No backend, API key or CDN is required.
+Pause or resume the search, step backward or forward, or reset it.
+The page shows the current state, parent, successors, frontier, expanded visits and statistics.
+After a solution is found, use Play solution or select a board in the solution path.
 
-## Quick demonstration
+For the default puzzle, limit 1 returns a cutoff. Limit 2 finds Down, then Right.
+A cutoff does not mean the puzzle is unsolvable. DLS does not guarantee the shortest path.
 
-1. Keep the default puzzle; set limit **1** and speed **Instant**. Run: the result is a cutoff.
-2. Reset; set limit **2** and run. DLS finds **Down → Right**, with cost 2.
-3. Use Previous/Next to inspect search events. Play the solution to see legal moves.
-4. Compare limits **0, 2, 4, 8**. Larger bounds may expand more visits even when the final move count is unchanged.
-5. Try the assignment example, a random puzzle or a custom goal.
+## Implementation
 
-The default limit 8 exposes more of the search tree. Limit 2 is useful for a short live demonstration. [Full 3–5 minute demonstration guide](docs/demo-guide.md).
+HTML5, CSS3, JavaScript and Bootstrap 5.3.8.
 
-![Solution and path](images/solution.png)
+- js/puzzle.js: board input, moves, solvability and random generation.
+- js/dls.js: depth-limited search.
+- js/app.js: page controls and display.
+- css/styles.css: layout and colours.
 
-![Measured comparison](images/comparison.png)
+Moves are tried in the order Up, Right, Down, Left.
+States already on the active path are skipped.
+Generated and expanded counts refer to visits, so the same board may be counted on different paths.
+Time excludes playback. Memory is an approximate search-storage value.
 
-<details>
-<summary>Mobile screenshot</summary>
+Limits are 0–31. Each run stops after 50,000 visits.
+The page keeps the latest 2,000 search steps and displays up to 8 entries per list.
 
-<img src="images/visualizer-mobile.png" alt="Mobile puzzle lab" width="330">
+## Screenshots
 
-</details>
+![Solver](images/visualizer-desktop.png)
 
-## Technologies and structure
+[Solution](images/solution.png) | [Comparison](images/comparison.png) | [Mobile layout](images/visualizer-mobile.png)
 
-HTML5, CSS3, JavaScript ES modules, Bootstrap **5.3.8** and Manrope. Node.js **22+** is used for development checks; Python 3 runs the local server.
+## Tests and deployment
 
-```text
-index.html                     Four hash-addressed application views
-css/styles.css                 Responsive theme and tile transitions
-js/puzzle.js                   Validation, legal moves, parity, random walks
-js/dls.js                      Incremental DLS and measurements
-js/app.js                      Controls, history, experiments and export
-assets/                        Local Bootstrap, font, icon and font license
-images/                        Real application screenshots
-tests/                         Node unit tests and browser journeys
-scripts/                       Build, screenshots and submission helpers
-docs/                          Scope, demonstration, validation and submission
-.github/workflows/pages.yml    Tests and GitHub Pages deployment
-```
+    npm ci --ignore-scripts
+    npx playwright install --with-deps chromium
+    npm test
+    npm run test:coverage
+    npm run test:e2e
+    npm run check
+    npm run format:check
+    npm run build
 
-## Algorithm and measurements
+Node.js 22+ is required for these checks. Python 3 serves the test site.
+An existing Chromium executable can be selected with PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH.
 
-With branching factor b and depth bound ℓ, DLS has worst-case time **O(b^ℓ)** and search working storage **O(bℓ)**. Retaining up to **2,000 visualization events** adds separate storage. The app visits at most **50,000 nodes per run** and permits limits **0–31** to protect responsiveness.
+The GitHub Actions workflow checks pushes to main and deploys the files in _site to GitHub Pages.
+In repository Settings > Pages, the source is GitHub Actions.
 
-- **Generated:** root plus successor visits admitted to the frontier, including the same board on different paths.
-- **Expanded:** visits whose successors are generated. Goals and cutoff nodes are not expanded.
-- **Maximum depth:** deepest visited node; it need not equal solution depth.
-- **Time:** computation only, excluding animation, rendering and user pauses.
-- **Memory:** peak logical node-storage estimate, **not a measured browser heap**. UI history has a separate rough estimate.
-- **Closed list:** recent expanded visits for inspection. It does not globally prune states; cycle prevention uses the current ancestor path only.
+## References
 
-A cutoff means the bound prevented further exploration; it does not prove unsolvability. A resource limit is inconclusive. DLS can find a solution within the bound if allowed to finish, but does not guarantee a shortest path. Random walk length is not a measured optimal difficulty.
+- [Question paper](Artificial%20Intelligence%20QP%201.pdf)
+- Russell and Norvig, [Artificial Intelligence: A Modern Approach](https://aima.cs.berkeley.edu/)
+- [Bootstrap documentation](https://getbootstrap.com/docs/5.3/); MIT licence retained in the stylesheet.
+- [MDN JavaScript generators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*)
 
-## Development checks
-
-```sh
-npm ci --ignore-scripts
-npx playwright install --with-deps chromium
-npm run check
-npm test
-npm run test:coverage
-npm run test:e2e
-npm run format:check
-npm run build
-```
-
-The build copies an explicit public-file allowlist into `_site/`. Tests cover depth boundaries, paths, parity, input errors, pause/reset/replay, comparison invalidation, responsive overflow and automated axe accessibility checks. [Validation evidence and limitations](docs/validation.md).
-
-For an existing browser, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to its executable; otherwise Playwright uses its matching downloaded Chromium.
-
-## GitHub Pages
-
-Choose **Settings → Pages → Source → GitHub Actions**. The workflow validates the app, uploads `_site/`, and deploys pushes to `main`. Pull requests run checks without deploying. No personal access token or external hosting service is required.
-
-Based on the [official static-site workflow](https://github.com/actions/starter-workflows/blob/main/pages/static.yml) and [GitHub Pages publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
-
-## References and acknowledgments
-
-- [Assignment PDF](Artificial%20Intelligence%20QP%201.pdf), algorithm list on page 1 and allocation table on page 10.
-- Russell and Norvig, [Artificial Intelligence: A Modern Approach](https://aima.cs.berkeley.edu/), search concepts.
-- [MDN generators](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*), incremental execution.
-- [Bootstrap](https://getbootstrap.com/docs/5.3/), MIT license; notice preserved in the local stylesheet.
-- [Manrope by Mikhail Sharanda](https://github.com/sharanda/manrope), SIL Open Font License; included in `assets/Manrope-LICENSE.txt`.
-- [Playwright](https://playwright.dev/) and [axe-core](https://github.com/dequelabs/axe-core), development testing.
-- OpenAI Codex assisted with implementation, tests, documentation and demonstration preparation. The supplied walkthrough uses synthetic narration. Review the source and explain the implementation in your own demonstration.
+Development assistance: OpenAI Codex.

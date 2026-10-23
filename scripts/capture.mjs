@@ -28,7 +28,7 @@ await page.locator("#compare-run").click();
 await page.waitForFunction(() =>
   document
     .querySelector("#comparison-status")
-    .textContent.startsWith("Experiment complete"),
+    .textContent.startsWith("Comparison complete"),
 );
 await page.screenshot({ path: "images/comparison.png", fullPage: true });
 await browser.close();
