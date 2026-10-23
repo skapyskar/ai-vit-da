@@ -2,6 +2,8 @@
 
 Aayush Dwivedi | 24BCT0058
 
+Caption text and timings: [TXT](demo-captions.txt) | [SRT](demo-captions.srt).
+
 The video contains a screen recording with captions. It covers:
 
 1. Initial and goal states, blank notation and depth limit.
