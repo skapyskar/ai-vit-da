@@ -7,7 +7,7 @@ Validated on 23 October 2026.
 - `npm test`: **13 passed, 0 failed**.
 - `npm run test:coverage`: search/puzzle modules **100% lines, 100% functions, 94.83% branches**, above the enforced 80% thresholds. This is core-module coverage, not a whole-UI coverage claim.
 - `npm run check`: JavaScript syntax checks passed.
-- Playwright: **5 browser journeys passed** using installed Chromium 151.0.7922.34 (revision 1234) with Playwright 1.58.2 via the executable-path override. CI installs Playwright's matching Chromium independently.
+- Playwright: **5 browser journeys passed** using installed Chromium 151.0.7922.34 (revision 1234) with Playwright 1.58.2 via the executable-path override. CI uses the Google Chrome preinstalled on GitHub's Ubuntu runner, prints its version, and runs the same browser suite.
 - Automated axe checks on all four application views: no violations of the tested WCAG A/AA rules. This is not a complete accessibility certification.
 - No document-level horizontal overflow at **375, 768 and 1440 px** in the responsive browser journey.
 - Desktop/mobile, solution, and comparison screenshots were generated from actual browser interactions. This is an initial visual baseline; no prior baseline existed for regression comparison.
