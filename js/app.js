@@ -275,7 +275,13 @@ function advance() {
     renderEvent(session.history[session.cursor]);
     return true;
   }
-  if (session.result) return false;
+  if (session.result) {
+    session.playing = false;
+    $("run-state").textContent =
+      session.result.status === "solved" ? "Solved" : "Finished";
+    updateControls();
+    return false;
+  }
   const step = session.search.next();
   if (step.done) {
     session.result = step.value;
